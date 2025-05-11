@@ -1,4 +1,4 @@
-this repo contains some  experimental stuff for (Symbian 9 Kernel) , ekern.lib, ldd ... etc
+this repo contains some  experimental stuff related to EKern (Symbian 9 Kernel) , ekern.lib, ldd ... etc
 
 * EKernCtl:
 this is an LDD (logical device driver) which has a function to reboot the device via Kern::Restart(mode)
