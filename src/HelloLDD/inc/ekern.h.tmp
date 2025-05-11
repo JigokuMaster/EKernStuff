@@ -1,0 +1,212 @@
+#define __KERNEL_MODE__
+
+#include <e32cmn.h>
+
+class TChannelCreateInfo;
+class DLogicalChannelBase;
+class DLogicalDevice;
+class DCodeSeg;
+class DPhysicalDevice;
+class DObject;
+class DThread;
+class DProcess;
+
+class DBase
+{
+public:
+	IMPORT_C virtual ~DBase();
+	IMPORT_C void Delete(DBase*);
+	IMPORT_C void AsyncDelete(void);
+	IMPORT_C void* operator new(unsigned int);
+	IMPORT_C void* operator new(unsigned int, unsigned int);
+protected:
+	TAny* iForAsyncDelete;
+	};
+
+
+class DObject : public DBase
+{
+		
+public:
+	IMPORT_C DObject();
+	IMPORT_C ~DObject();
+	IMPORT_C void CheckedOpen();
+	IMPORT_C virtual TInt Close(TAny* aPtr);
+	IMPORT_C virtual TInt RequestUserHandle(DThread* aThread, TOwnerType aType);
+	//IMPORT_C virtual TInt RequestUserHandle(DThread* aThread, TOwnerType aType, TUint aAttr);
+	IMPORT_C virtual TInt AddToProcess(DProcess* aProcess);
+	//IMPORT_C virtual TInt AddToProcess(DProcess* aProcess, TUint aAttr);
+	IMPORT_C TInt AsyncClose();
+	IMPORT_C virtual void DoAppendName(TDes& aName);
+	IMPORT_C void DoAppendFullName(TDes& aFullName);
+	IMPORT_C void Name(TDes& aName);
+	IMPORT_C void AppendName(TDes& aName);
+	IMPORT_C void FullName(TDes& aFullName);
+	IMPORT_C void AppendFullName(TDes& aFullName);
+	IMPORT_C TInt SetName(const TDesC* aName);
+	IMPORT_C TInt SetOwner(DObject* aOwner);
+	IMPORT_C void TraceAppendName(TDes8& aName, TBool aLock);
+	IMPORT_C void TraceAppendFullName(TDes8& aFullName, TBool aLock);
+};
+
+
+class DThread : public DObject
+{
+
+public:
+	DThread();	
+};
+
+
+/**
+@publishedPartner
+@released
+
+The abstract base class for an LDD factory object.
+*/
+class DLogicalDevice : public DObject
+	{
+public:
+	IMPORT_C virtual ~DLogicalDevice();
+	IMPORT_C virtual TBool QueryVersionSupported(const TVersion& aVer) const;
+	IMPORT_C virtual TBool IsAvailable(TInt aUnit, const TDesC* aDriver, const TDesC8* aInfo) const;
+	TInt ChannelCreate(DLogicalChannelBase*& pC, TChannelCreateInfo& aInfo);
+	TInt FindPhysicalDevice(DLogicalChannelBase* aChannel, TChannelCreateInfo& aInfo);
+
+
+	/**
+	Second stage constructor for derived objects.
+	This must at least set a name for the driver object.
+
+	@return KErrNone or standard error code.
+	*/
+	virtual TInt Install()=0;
+
+
+	/**
+	Gets the driver's capabilities.
+	
+	This is called in the response to an RDevice::GetCaps() request.
+
+	@param aDes A user-side descriptor into which capabilities information is to be wriiten.
+	*/
+	virtual void GetCaps(TDes8& aDes) const =0;
+
+
+	/**
+	Called by the kernel's device driver framework to create a Logical Channel.
+	This is called in the context of the user thread (client) which requested the creation of a Logical Channel
+	(e.g. through a call to RBusLogicalChannel::DoCreate).
+	The thread is in a critical section.
+
+	@param aChannel Set to point to the created Logical Channel
+
+	@return KErrNone or standard error code.
+	*/
+	virtual TInt Create(DLogicalChannelBase*& aChannel)=0;
+
+
+public:
+    /**
+    The version of this factory object.
+
+    This is used to check that an LDD and PDD are compatible.
+    Typically, this is set by the constructor of a derived class.
+    */
+	TVersion iVersion;
+	
+	
+	/**
+	A bitmask that indicates device properties.
+
+    This can take the following values:
+    KDeviceAllowUnit
+    KDeviceAllowPhysicalDevice
+    KDeviceAllowInfo
+    KDeviceAllowAll
+    
+    Typically, this is set by the constructor of a derived class.
+
+    @see RBusLogicalChannel::DoCreate()
+    @see KDeviceAllowUnit
+    @see KDeviceAllowPhysicalDevice
+    @see KDeviceAllowInfo
+    @see KDeviceAllowAll
+	*/
+	TUint iParseMask;
+	
+	
+	/**
+	Indicates which units are valid.
+
+    If units are allowed, i.e. the KDeviceAllowUnit bit is set in iParseMask,
+    then this mask indicates which of the units (from 0 to 31) are valid.
+
+    The DPhysicalDevice object associated with the PDD has a similar mask,
+    and both masks are used to indicate which units the LDD-PDD pair
+    can handle.
+
+    Typically, this is set by the constructor of a derived class.
+    
+    @see KDeviceAllowUnit
+	*/
+	TUint iUnitsMask;
+	
+	
+	/**
+	Pointer to the DCodeSeg object which contains the executable code
+	for this LDD.
+	*/
+	DCodeSeg* iCodeSeg;
+	
+	
+	/**
+	Number of DLogicalChannelBase objects currently in existence which
+	have been created from this LDD.
+	*/
+	TInt iOpenChannels;
+	};
+
+class TChannelCreateInfo
+{
+public:
+	TVersion iVersion;
+	TInt iUnit;
+	const TDesC8* iPhysicalDevice;
+	const TDesC8* iInfo;
+};
+
+
+class DLogicalChannelBase : public DObject
+	{
+public:
+	IMPORT_C virtual ~DLogicalChannelBase();
+public:
+    /**
+    Handles a client request in the client context.
+    
+    The function is called from within the kernel, but the implementation
+    must be provided by external code.
+    */
+	virtual TInt Request(TInt aReqNo, TAny* a1, TAny* a2)=0;
+	IMPORT_C virtual TInt DoCreate(TInt aUnit, const TDesC8* aInfo, const TVersion& aVer);
+public:
+	DLogicalDevice* iDevice;
+	DPhysicalDevice* iPhysicalDevice;
+	DBase* iPdd;
+	};
+
+
+
+
+class Kern
+{
+public:
+	IMPORT_C static void Printf(const char* aFmt, ...);
+    IMPORT_C static TBool QueryVersionSupported(const TVersion& aCurrent,const TVersion& aRequested);
+	IMPORT_C static void Restart(TInt aMode);
+	IMPORT_C static TInt InfoCopy(TDes8 &, unsigned char  const*, int);
+	IMPORT_C static TInt InfoCopy(TDes8 &, TDesC8  const&);
+
+};
+

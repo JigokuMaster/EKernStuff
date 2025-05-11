@@ -1,0 +1,26 @@
+/*
+============================================================================
+ Name		: HelloLDD.mmp
+ Author	  : leftup
+ Copyright   : Your copyright notice
+ Description : This is the project specification file for HelloLDD.
+============================================================================
+*/
+
+TARGET		  EKernCtl.ldd
+TARGETTYPE	  ldd
+uid				0x100000af 0x20060fcc
+CAPABILITY ALL
+
+USERINCLUDE	 ..\inc
+SYSTEMINCLUDE   \epoc32\include
+
+SOURCEPATH	  ..\src
+
+SOURCE		  HelloLDD.cpp
+
+
+LIBRARY ekern.lib
+//LIBRARY drtaeabi.lib
+
+

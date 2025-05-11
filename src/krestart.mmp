@@ -1,0 +1,13 @@
+
+TARGET		krestart.exe
+TARGETTYPE	exe
+UID      	0x100039CE 0x20060fcc
+
+
+SOURCEPATH	.
+SOURCE		main.cpp
+SYSTEMINCLUDE	\epoc32\include 
+SYSTEMINCLUDE	\epoc32\include\libc 
+LIBRARY euser.lib
+//LIBRARY estlib.lib
+//MACRO ENABLE_LOGGING
