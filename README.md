@@ -1,16 +1,16 @@
 this repo contains some  experimental stuff for (Symbian 9 Kernel) , ekern.lib, ldd ... etc
 
-** EKernCtl:
+* EKernCtl:
 this is an LDD (logical device driver) which has a function to reboot the device via Kern::Restart(mode)
 
-** Clients  for EKernCtl.ldd :
+* Clients  for EKernCtl.ldd:
 
-1) - KRestartModule ,  an mshell module that can be used to restart the kernel
+1) KRestartModule ,  an mshell module that can be used to restart the kernel
 
-2) - krestart, a native symbian program without gui.
+2) krestart, a native symbian program without gui.
 
 
-** Resource:
+* Resources:
 
 https://github.com/zorn-v/ROMPatcher
 
